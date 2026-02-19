@@ -4,431 +4,674 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🚖 Remis La Unión - Dolores</title>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Supabase JS -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-        body { 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
+        body { height: 100vh; overflow: hidden; background: #f0f2f5; }
+        #app { height: 100%; display: flex; flex-direction: column; }
+
+        /* Header con logo */
+        .app-header {
+            background: linear-gradient(135deg, var(--primary-color, #ffd700) 0%, #ffed4e 100%);
+            padding: 10px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            height: 70px;
+        }
+        .logo-container {
             display: flex;
             align-items: center;
-            justify-content: center;
+            gap: 10px;
+            max-width: 60%;
         }
-        
-        .login-card {
+        .logo-image {
+            height: 50px;
+            width: auto;
+            max-width: 150px;
+            object-fit: contain;
+        }
+        .logo-text {
+            font-size: 18px;
+            font-weight: 800;
+            color: #1a1a1a;
+        }
+        .contact-phone {
+            background: #1a1a1a;
+            color: var(--primary-color, #ffd700);
+            padding: 8px 15px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            white-space: nowrap;
+        }
+
+        /* Navegación inferior */
+        .bottom-nav {
+            display: flex;
+            justify-content: space-around;
             background: white;
-            padding: 40px;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            width: 90%;
-            max-width: 400px;
+            padding: 10px 0;
+            border-top: 1px solid #ddd;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            z-index: 1000;
         }
-        
-        .login-card h1 {
-            text-align: center;
-            color: #333;
-            margin-bottom: 10px;
-            font-size: 28px;
-        }
-        
-        .login-card .subtitle {
-            text-align: center;
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
             color: #666;
-            margin-bottom: 30px;
-            font-size: 14px;
-        }
-        
-        .input-group {
-            margin-bottom: 20px;
-        }
-        
-        .input-group label {
-            display: block;
-            margin-bottom: 8px;
-            color: #555;
-            font-weight: 600;
-            font-size: 14px;
-        }
-        
-        .input-group input {
-            width: 100%;
-            padding: 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            font-size: 16px;
-            transition: border-color 0.3s;
-        }
-        
-        .input-group input:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-        
-        .btn {
-            width: 100%;
-            padding: 15px;
-            border: none;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 600;
+            font-size: 12px;
             cursor: pointer;
-            transition: transform 0.2s, opacity 0.2s;
-            margin-bottom: 10px;
+            padding: 5px 15px;
+            border-radius: 20px;
+            transition: all 0.3s;
         }
-        
-        .btn-primary {
-            background: #667eea;
-            color: white;
+        .nav-item.active {
+            background: var(--primary-color, #ffd700);
+            color: #1a1a1a;
         }
-        
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            opacity: 0.9;
+        .nav-item i { font-size: 24px; margin-bottom: 2px; }
+
+        /* Mapa */
+        #map {
+            height: calc(100% - 70px);
+            width: 100%;
+            z-index: 1;
         }
-        
-        .btn-secondary {
-            background: #48bb78;
-            color: white;
-        }
-        
-        .btn-secondary:hover {
-            transform: translateY(-2px);
-            opacity: 0.9;
-        }
-        
-        .btn-google {
-            background: #db4437;
-            color: white;
-        }
-        
-        .divider {
-            text-align: center;
-            margin: 20px 0;
-            position: relative;
-        }
-        
-        .divider::before,
-        .divider::after {
-            content: "";
-            position: absolute;
-            top: 50%;
-            width: 45%;
-            height: 1px;
-            background: #e0e0e0;
-        }
-        
-        .divider::before { left: 0; }
-        .divider::after { right: 0; }
-        
-        .divider span {
+
+        /* Panel deslizable */
+        .slide-panel {
+            position: fixed;
+            bottom: 70px;
+            left: 0;
+            right: 0;
             background: white;
-            padding: 0 10px;
-            color: #999;
-            font-size: 14px;
+            border-radius: 20px 20px 0 0;
+            padding: 20px;
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.15);
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+            z-index: 900;
+            max-height: 70vh;
+            overflow-y: auto;
         }
-        
-        .error-message {
-            background: #fee;
-            color: #c33;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            text-align: center;
-            font-size: 14px;
-            display: none;
+        .slide-panel.open {
+            transform: translateY(0);
         }
-        
-        .success-message {
-            background: #e8f5e9;
-            color: #2e7d32;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            text-align: center;
-            font-size: 14px;
-            display: none;
+        .panel-handle {
+            width: 50px;
+            height: 5px;
+            background: #ccc;
+            border-radius: 3px;
+            margin: 0 auto 15px;
+            cursor: pointer;
         }
-        
-        .loading {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(255,255,255,0.3);
-            border-radius: 50%;
-            border-top-color: white;
-            animation: spin 1s ease-in-out infinite;
-            margin-right: 10px;
-            vertical-align: middle;
-            display: none;
+        .panel-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
-        
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        
-        .test-credentials {
-            background: #f8f9fa;
+
+        /* Botones */
+        .btn-primary {
+            background: #4CAF50;
+            color: white;
+            border: none;
             padding: 15px;
             border-radius: 10px;
-            margin-top: 20px;
-            font-size: 13px;
-            color: #666;
-            text-align: center;
+            font-size: 16px;
+            font-weight: bold;
+            width: 100%;
+            cursor: pointer;
+            margin: 5px 0;
         }
-        
-        .test-credentials code {
-            background: #e9ecef;
-            padding: 3px 6px;
-            border-radius: 4px;
-            color: #d73a49;
+        .btn-secondary {
+            background: white;
+            color: #333;
+            border: 1px solid #ddd;
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 14px;
+            cursor: pointer;
+            margin: 5px 0;
+            width: 100%;
+        }
+
+        /* Tarjeta de tarifa */
+        .fare-estimate {
+            background: #f0f8ff;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .fare-price {
+            font-size: 24px;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+
+        /* Tarjeta de viaje */
+        .ride-card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 10px;
+        }
+
+        /* Badges de estado */
+        .status-badge {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .status-pending { background: #fff3cd; color: #856404; }
+        .status-accepted { background: #d4edda; color: #155724; }
+
+        :root {
+            --primary-color: #ffd700;
+            --secondary-color: #1a1a1a;
         }
     </style>
-    <!-- Cargar Supabase de forma explícita -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
 </head>
 <body>
-    <div class="login-card" id="app">
-        <h1>🚖 Remis La Unión</h1>
-        <div class="subtitle" id="statusText">Inicializando...</div>
-        
-        <div id="errorDisplay" class="error-message"></div>
-        <div id="successDisplay" class="success-message"></div>
-        
-        <div id="loginForm">
-            <div class="input-group">
-                <label>Email</label>
-                <input type="email" id="email" value="test@test.com" placeholder="ejemplo@correo.com">
-            </div>
-            
-            <div class="input-group">
-                <label>Contraseña</label>
-                <input type="password" id="password" value="123456" placeholder="••••••••">
-            </div>
-            
-            <button class="btn btn-primary" id="loginBtn" onclick="handleLogin()">
-                <span class="loading" id="loginLoading"></span>
-                Iniciar Sesión
-            </button>
-            
-            <button class="btn btn-secondary" id="registerBtn" onclick="handleRegister()">
-                <span class="loading" id="registerLoading"></span>
-                Crear Cuenta
-            </button>
-            
-            <div class="divider">
-                <span>o</span>
-            </div>
-            
-            <button class="btn btn-google" onclick="handleGoogleLogin()">
-                Continuar con Google
-            </button>
-        </div>
-        
-        <div class="test-credentials">
-            <strong>🔐 Credenciales de prueba:</strong><br>
-            Email: <code>test@test.com</code><br>
-            Password: <code>123456</code>
+    <div id="app">
+        <div style="display: flex; justify-content: center; align-items: center; height: 100%;">
+            <div class="spinner"></div>
         </div>
     </div>
 
     <script>
         // ============================================
-        // CONFIGURACIÓN SUPABASE - VERIFICADA
+        // CONFIGURACIÓN SUPABASE
         // ============================================
         const SUPABASE_URL = 'https://tmccuhzqyfgjaerqydmr.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtY2N1aHpxeWZnamFlcnF5ZG1yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1MjUxNTMsImV4cCI6MjA4NzEwMTE1M30.RZyzaN1a35DgNT4N70D5oxvFbliMoKcNgFc16C4zz9E';
+        
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+            auth: { persistSession: true, autoRefreshToken: true }
+        });
 
-        // Variable global para el cliente
-        let supabaseClient = null;
+        // ============================================
+        // ESTADO GLOBAL
+        // ============================================
+        let currentUser = null;
+        let userProfile = null;
+        let userRole = 'passenger';
+        let map = null;
+        let userMarker = null;
+        let pickupMarker = null;
+        let dropoffMarker = null;
+        let pickup = null;
+        let dropoff = null;
+        let currentRide = null;
+        let pendingRequests = [];
+        let watchId = null;
+
+        // Configuración del remís
+        let appConfig = {
+            remisName: 'Remis La Unión - Dolores',
+            phoneMain: '2244-567890',
+            baseFare: 3500,
+            extraBlockRate: 150,
+            waitingRate: 150,
+            commissionRate: 20,
+            primaryColor: '#ffd700',
+            secondaryColor: '#1a1a1a',
+            logo: null
+        };
 
         // ============================================
         // INICIALIZACIÓN
         // ============================================
-        window.addEventListener('load', async function() {
-            document.getElementById('statusText').textContent = 'Conectando con servidor...';
+        window.addEventListener('load', init);
+
+        async function init() {
+            await loadConfig();
+            applyTheme();
             
-            try {
-                // Verificar que Supabase cargó
-                if (typeof supabase === 'undefined') {
-                    throw new Error('La librería de Supabase no cargó. Verifica tu conexión.');
-                }
-                
-                // Crear cliente
-                supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-                    auth: {
-                        autoRefreshToken: true,
-                        persistSession: true,
-                        detectSessionInUrl: true
-                    }
-                });
-                
-                // Probar conexión
-                document.getElementById('statusText').textContent = 'Verificando sesión...';
-                
-                const { data: { user }, error } = await supabaseClient.auth.getUser();
-                
-                if (user) {
-                    document.getElementById('statusText').textContent = `✅ Sesión activa: ${user.email}`;
-                    showSuccess(`Bienvenido ${user.email}`);
-                    
-                    // Ocultar formulario de login
-                    document.getElementById('loginForm').style.display = 'none';
-                    
-                    // Mostrar opciones
-                    const testDiv = document.querySelector('.test-credentials');
-                    testDiv.innerHTML = `
-                        <strong>✅ Sesión iniciada como:</strong><br>
-                        ${user.email}<br>
-                        <button onclick="logout()" style="margin-top:10px; padding:10px; background:#f44336; color:white; border:none; border-radius:5px; cursor:pointer;">
-                            Cerrar Sesión
-                        </button>
-                    `;
-                } else {
-                    document.getElementById('statusText').textContent = '🔐 Listo para iniciar sesión';
-                }
-                
-            } catch (error) {
-                showError('Error de inicialización: ' + error.message);
-                document.getElementById('statusText').textContent = '❌ Error de conexión';
-                console.error('Error detallado:', error);
+            const { data: { user } } = await supabaseClient.auth.getUser();
+            
+            if (user) {
+                currentUser = user;
+                await loadUserProfile();
+                await loadPendingRequests();
+                startLocationTracking();
+                renderMainApp();
+            } else {
+                renderLogin();
             }
-        });
+        }
 
         // ============================================
-        // FUNCIONES DE AUTENTICACIÓN
+        // RENDERIZADO
+        // ============================================
+        function renderLogin() {
+            document.getElementById('app').innerHTML = `
+                <div style="display: flex; flex-direction: column; height: 100%; background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));">
+                    <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px;">
+                        ${appConfig.logo ? 
+                            `<img src="${appConfig.logo}" style="width: 120px; height: 120px; object-fit: contain; margin-bottom: 20px;">` : 
+                            `<div style="font-size: 80px; margin-bottom: 20px;">🚖</div>`
+                        }
+                        <h1 style="color: white; margin-bottom: 10px;">${appConfig.remisName}</h1>
+                        
+                        <div style="width: 100%; max-width: 400px; background: white; padding: 30px; border-radius: 20px; margin-top: 20px;">
+                            <h2 style="margin-bottom: 20px; text-align: center;">Bienvenido</h2>
+                            <input type="email" id="email" placeholder="Email" value="test@test.com" style="width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px;">
+                            <input type="password" id="password" placeholder="Contraseña" value="123456" style="width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px;">
+                            <button onclick="handleLogin()" style="width: 100%; padding: 12px; background: #4CAF50; color: white; border: none; border-radius: 5px; margin: 5px 0; cursor: pointer;">Iniciar Sesión</button>
+                            <button onclick="handleLogout()" style="width: 100%; padding: 12px; background: #f44336; color: white; border: none; border-radius: 5px; margin: 5px 0; cursor: pointer;">Cerrar Sesión</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderMainApp() {
+            document.getElementById('app').innerHTML = `
+                <div class="app-header">
+                    <div class="logo-container">
+                        ${appConfig.logo ? 
+                            `<img src="${appConfig.logo}" class="logo-image">` : 
+                            `<span style="font-size: 30px;">🚖</span>`
+                        }
+                        <span class="logo-text">${appConfig.remisName}</span>
+                    </div>
+                    <a href="tel:${appConfig.phoneMain}" class="contact-phone">📞 ${appConfig.phoneMain}</a>
+                </div>
+                
+                <div id="map"></div>
+                
+                <div class="slide-panel" id="slidePanel">
+                    <div class="panel-handle" onclick="togglePanel()"></div>
+                    <div id="panelContent"></div>
+                </div>
+                
+                <div class="bottom-nav">
+                    <div class="nav-item ${userRole === 'passenger' ? 'active' : ''}" onclick="switchRole('passenger')">
+                        <i>👤</i>
+                        <span>Pasajero</span>
+                    </div>
+                    <div class="nav-item ${userRole === 'driver' ? 'active' : ''}" onclick="switchRole('driver')">
+                        <i>🚗</i>
+                        <span>Conductor</span>
+                    </div>
+                    <div class="nav-item" onclick="openHistory()">
+                        <i>📋</i>
+                        <span>Historial</span>
+                    </div>
+                    <div class="nav-item" onclick="logout()">
+                        <i>🚪</i>
+                        <span>Salir</span>
+                    </div>
+                </div>
+            `;
+            
+            setTimeout(initMap, 100);
+            updatePanelForRole();
+        }
+
+        // ============================================
+        // MAPA
+        // ============================================
+        function initMap() {
+            if (map) map.remove();
+            
+            map = L.map('map').setView([-34.6037, -58.3816], 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+            
+            navigator.geolocation.getCurrentPosition(pos => {
+                const { latitude, longitude } = pos.coords;
+                map.setView([latitude, longitude], 15);
+                
+                if (userMarker) map.removeLayer(userMarker);
+                userMarker = L.marker([latitude, longitude]).addTo(map).bindPopup('Tu ubicación');
+                
+                if (userRole === 'passenger' && !pickup) {
+                    pickup = { lat: latitude, lng: longitude };
+                }
+            });
+            
+            map.on('click', (e) => {
+                if (userRole === 'passenger' && !currentRide) {
+                    dropoff = { lat: e.latlng.lat, lng: e.latlng.lng };
+                    updateMarkers();
+                    renderPassengerPanel();
+                }
+            });
+        }
+
+        function updateMarkers() {
+            if (pickupMarker) map.removeLayer(pickupMarker);
+            if (dropoffMarker) map.removeLayer(dropoffMarker);
+            
+            if (pickup) {
+                pickupMarker = L.marker([pickup.lat, pickup.lng], {
+                    icon: L.divIcon({ html: '📍', iconSize: [30, 30] })
+                }).addTo(map).bindPopup('Origen');
+            }
+            if (dropoff) {
+                dropoffMarker = L.marker([dropoff.lat, dropoff.lng], {
+                    icon: L.divIcon({ html: '🎯', iconSize: [30, 30] })
+                }).addTo(map).bindPopup('Destino');
+            }
+        }
+
+        // ============================================
+        // PANELES
+        // ============================================
+        function updatePanelForRole() {
+            if (userRole === 'passenger') {
+                renderPassengerPanel();
+            } else {
+                renderDriverPanel();
+            }
+            document.getElementById('slidePanel').classList.add('open');
+        }
+
+        function renderPassengerPanel() {
+            const panel = document.getElementById('panelContent');
+            if (!panel) return;
+            
+            let html = `<div class="panel-title">Solicitar Viaje</div>`;
+            
+            if (currentRide) {
+                html += `<div class="status-badge status-pending">Viaje solicitado</div>`;
+            } else {
+                html += `
+                    <button class="btn-secondary" onclick="setPickupHere()">📍 Usar mi ubicación</button>
+                    <button class="btn-secondary" onclick="setDropoffHere()">🎯 Destino aquí</button>
+                `;
+                
+                if (pickup && dropoff) {
+                    const distance = getDistanceInMeters(pickup.lat, pickup.lng, dropoff.lat, dropoff.lng);
+                    const blocks = metersToBlocks(distance);
+                    const fare = calculateFare(blocks, 0);
+                    
+                    html += `
+                        <div class="fare-estimate">
+                            <div>Tarifa estimada</div>
+                            <div class="fare-price">$${fare.total}</div>
+                        </div>
+                        <button class="btn-primary" onclick="requestRide()">🚖 Solicitar Viaje</button>
+                    `;
+                }
+            }
+            
+            panel.innerHTML = html;
+        }
+
+        function renderDriverPanel() {
+            const panel = document.getElementById('panelContent');
+            if (!panel) return;
+            
+            let html = `<div class="panel-title">Viajes disponibles</div>`;
+            
+            if (pendingRequests.length === 0) {
+                html += `<p style="text-align: center; color: #666; padding: 20px;">No hay viajes disponibles</p>`;
+            } else {
+                pendingRequests.forEach(ride => {
+                    html += `
+                        <div class="ride-card">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <strong>💰 $${ride.fare?.total}</strong>
+                                    <p style="font-size: 12px; color: #666;">${new Date(ride.created_at).toLocaleTimeString()}</p>
+                                </div>
+                                <button class="btn-primary" style="width: auto; padding: 10px;" onclick="acceptRide('${ride.id}')">
+                                    Aceptar
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            
+            panel.innerHTML = html;
+        }
+
+        // ============================================
+        // ACCIONES DE USUARIO
         // ============================================
         window.handleLogin = async function() {
-            const email = document.getElementById('email').value.trim();
+            const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             
-            if (!email || !password) {
-                showError('Completa todos los campos');
-                return;
-            }
+            const { data, error } = await supabaseClient.auth.signInWithPassword({
+                email, password
+            });
             
-            // Mostrar loading
-            document.getElementById('loginLoading').style.display = 'inline-block';
-            document.getElementById('loginBtn').disabled = true;
-            hideError();
-            
-            try {
-                console.log('Intentando login con:', email);
-                
-                const { data, error } = await supabaseClient.auth.signInWithPassword({
-                    email: email,
-                    password: password
-                });
-                
-                if (error) throw error;
-                
-                showSuccess('¡Login exitoso! Recargando...');
-                setTimeout(() => location.reload(), 1500);
-                
-            } catch (error) {
-                console.error('Error de login:', error);
-                showError('Error: ' + error.message);
-            } finally {
-                document.getElementById('loginLoading').style.display = 'none';
-                document.getElementById('loginBtn').disabled = false;
+            if (error) {
+                alert('Error: ' + error.message);
+            } else {
+                currentUser = data.user;
+                await loadUserProfile();
+                await loadPendingRequests();
+                startLocationTracking();
+                renderMainApp();
             }
         };
 
-        window.handleRegister = async function() {
-            const email = document.getElementById('email').value.trim();
-            const password = document.getElementById('password').value;
-            
-            if (!email || !password) {
-                showError('Completa todos los campos');
-                return;
-            }
-            
-            if (password.length < 6) {
-                showError('La contraseña debe tener al menos 6 caracteres');
-                return;
-            }
-            
-            document.getElementById('registerLoading').style.display = 'inline-block';
-            document.getElementById('registerBtn').disabled = true;
-            hideError();
-            
-            try {
-                const { data, error } = await supabaseClient.auth.signUp({
-                    email: email,
-                    password: password,
-                    options: {
-                        data: {
-                            full_name: email.split('@')[0]
-                        }
-                    }
-                });
+        window.handleLogout = async function() {
+            await supabaseClient.auth.signOut();
+            currentUser = null;
+            renderLogin();
+        };
+
+        window.logout = handleLogout;
+
+        window.switchRole = async function(role) {
+            if (role !== userRole) {
+                await supabaseClient
+                    .from('profiles')
+                    .update({ user_role: role })
+                    .eq('id', currentUser.id);
                 
-                if (error) throw error;
-                
-                showSuccess('✅ Registro exitoso! Revisa tu email para confirmar.');
-                
-            } catch (error) {
-                showError('Error: ' + error.message);
-            } finally {
-                document.getElementById('registerLoading').style.display = 'none';
-                document.getElementById('registerBtn').disabled = false;
+                userRole = role;
+                pickup = null;
+                dropoff = null;
+                currentRide = null;
+                renderMainApp();
             }
         };
 
-        window.handleGoogleLogin = async function() {
-            try {
-                const { data, error } = await supabaseClient.auth.signInWithOAuth({
-                    provider: 'google'
-                });
-                
-                if (error) throw error;
-                
-            } catch (error) {
-                showError('Error con Google: ' + error.message);
+        window.togglePanel = function() {
+            document.getElementById('slidePanel').classList.toggle('open');
+        };
+
+        window.setPickupHere = function() {
+            if (!map || !userMarker) return;
+            const pos = userMarker.getLatLng();
+            pickup = { lat: pos.lat, lng: pos.lng };
+            updateMarkers();
+            renderPassengerPanel();
+        };
+
+        window.setDropoffHere = function() {
+            if (!map) return;
+            const center = map.getCenter();
+            dropoff = { lat: center.lat, lng: center.lng };
+            updateMarkers();
+            renderPassengerPanel();
+        };
+
+        window.requestRide = async function() {
+            if (!pickup || !dropoff) return;
+            
+            const distance = getDistanceInMeters(pickup.lat, pickup.lng, dropoff.lat, dropoff.lng);
+            const blocks = metersToBlocks(distance);
+            const fare = calculateFare(blocks, 0);
+            
+            const { data, error } = await supabaseClient
+                .from('rides')
+                .insert({
+                    passenger_id: currentUser.id,
+                    pickup: pickup,
+                    dropoff: dropoff,
+                    fare: fare,
+                    ride_status: 'pending'
+                })
+                .select()
+                .single();
+            
+            if (error) {
+                alert('Error: ' + error.message);
+            } else {
+                currentRide = data;
+                renderPassengerPanel();
+                loadPendingRequests();
             }
         };
 
-        window.logout = async function() {
-            try {
-                await supabaseClient.auth.signOut();
-                location.reload();
-            } catch (error) {
-                showError('Error al cerrar sesión: ' + error.message);
+        window.acceptRide = async function(rideId) {
+            const { error } = await supabaseClient
+                .from('rides')
+                .update({
+                    driver_id: currentUser.id,
+                    ride_status: 'accepted',
+                    started_at: new Date()
+                })
+                .eq('id', rideId);
+            
+            if (error) {
+                alert('Error: ' + error.message);
+            } else {
+                loadPendingRequests();
+                alert('Viaje aceptado!');
             }
+        };
+
+        window.openHistory = function() {
+            // Implementar historial
+            alert('Función en desarrollo');
         };
 
         // ============================================
-        // FUNCIONES AUXILIARES
+        // CÁLCULOS
         // ============================================
-        function showError(message) {
-            const errorDiv = document.getElementById('errorDisplay');
-            errorDiv.textContent = message;
-            errorDiv.style.display = 'block';
-            
-            // Auto-ocultar después de 5 segundos
-            setTimeout(() => {
-                errorDiv.style.display = 'none';
-            }, 5000);
+        function getDistanceInMeters(lat1, lon1, lat2, lon2) {
+            const R = 6371000;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                    Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) *
+                    Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
         }
 
-        function hideError() {
-            document.getElementById('errorDisplay').style.display = 'none';
+        function metersToBlocks(meters) {
+            return Math.ceil(meters / 120);
         }
 
-        function showSuccess(message) {
-            const successDiv = document.getElementById('successDisplay');
-            successDiv.textContent = message;
-            successDiv.style.display = 'block';
+        function calculateFare(blocks, waitingMinutes) {
+            const baseBlocks = 25;
+            const baseFare = appConfig.baseFare;
+            const extraRate = appConfig.extraBlockRate;
+            const waitingRate = appConfig.waitingRate;
             
-            setTimeout(() => {
-                successDiv.style.display = 'none';
-            }, 3000);
+            let distanceCost = baseFare;
+            if (blocks > baseBlocks) {
+                distanceCost = baseFare + ((blocks - baseBlocks) * extraRate);
+            }
+            
+            const waitingCost = waitingMinutes * waitingRate;
+            const subtotal = distanceCost + waitingCost;
+            const total = subtotal * (1 + appConfig.commissionRate/100);
+            
+            return { total: Math.round(total) };
         }
 
         // ============================================
-        // VERIFICACIÓN DE CONFIGURACIÓN
+        // DATOS
         // ============================================
-        console.log('✅ Script cargado');
-        console.log('URL:', SUPABASE_URL);
-        console.log('Key length:', SUPABASE_KEY.length);
+        async function loadConfig() {
+            try {
+                const { data } = await supabaseClient
+                    .from('config')
+                    .select('data')
+                    .eq('id', 1)
+                    .single();
+                
+                if (data) appConfig = { ...appConfig, ...data.data };
+            } catch (error) {
+                console.log('Usando configuración por defecto');
+            }
+        }
+
+        async function loadUserProfile() {
+            const { data } = await supabaseClient
+                .from('profiles')
+                .select('*')
+                .eq('id', currentUser.id)
+                .single();
+            
+            if (data) {
+                userProfile = data;
+                userRole = data.user_role || 'passenger';
+            }
+        }
+
+        async function loadPendingRequests() {
+            const { data } = await supabaseClient
+                .from('rides')
+                .select('*')
+                .eq('ride_status', 'pending');
+            
+            if (data) {
+                pendingRequests = data;
+                if (userRole === 'driver') renderDriverPanel();
+            }
+        }
+
+        function startLocationTracking() {
+            if (watchId) navigator.geolocation.clearWatch(watchId);
+            
+            watchId = navigator.geolocation.watchPosition(pos => {
+                const { latitude, longitude } = pos.coords;
+                if (userMarker) {
+                    userMarker.setLatLng([latitude, longitude]);
+                }
+                
+                if (userRole === 'driver' && currentUser) {
+                    supabaseClient
+                        .from('driver_locations')
+                        .upsert({
+                            driver_id: currentUser.id,
+                            location: { lat: latitude, lng: longitude },
+                            updated_at: new Date()
+                        });
+                }
+            }, null, { enableHighAccuracy: true });
+        }
+
+        function applyTheme() {
+            document.documentElement.style.setProperty('--primary-color', appConfig.primaryColor);
+            document.documentElement.style.setProperty('--secondary-color', appConfig.secondaryColor);
+        }
+
+        // Actualizar viajes pendientes cada 5 segundos
+        setInterval(loadPendingRequests, 5000);
     </script>
 </body>
 </html>
