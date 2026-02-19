@@ -15,9 +15,9 @@
         body { height: 100vh; overflow: hidden; background: #f0f2f5; }
         #app { height: 100%; display: flex; flex-direction: column; }
 
-        /* Header con logo */
+        /* Header con logo - AHORA EN VERDE */
         .app-header {
-            background: linear-gradient(135deg, var(--primary-color, #ffd700) 0%, #ffed4e 100%);
+            background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);
             padding: 10px 15px;
             display: flex;
             justify-content: space-between;
@@ -40,11 +40,12 @@
         .logo-text {
             font-size: 18px;
             font-weight: 800;
-            color: #1a1a1a;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
         }
         .contact-phone {
             background: #1a1a1a;
-            color: var(--primary-color, #ffd700);
+            color: #4CAF50;
             padding: 8px 15px;
             border-radius: 50px;
             text-decoration: none;
@@ -80,8 +81,8 @@
             transition: all 0.3s;
         }
         .nav-item.active {
-            background: var(--primary-color, #ffd700);
-            color: #1a1a1a;
+            background: #4CAF50;
+            color: white;
         }
         .nav-item i { font-size: 24px; margin-bottom: 2px; }
 
@@ -126,6 +127,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            color: #2E7D32;
         }
 
         /* Botones */
@@ -140,11 +142,35 @@
             width: 100%;
             cursor: pointer;
             margin: 5px 0;
+            transition: background 0.3s;
         }
+        .btn-primary:hover { background: #2E7D32; }
+        .btn-primary:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
         .btn-secondary {
             background: white;
             color: #333;
-            border: 1px solid #ddd;
+            border: 2px solid #4CAF50;
+            padding: 13px;
+            border-radius: 10px;
+            font-size: 14px;
+            cursor: pointer;
+            margin: 5px 0;
+            width: 100%;
+            transition: all 0.3s;
+        }
+        .btn-secondary:hover {
+            background: #4CAF50;
+            color: white;
+        }
+        
+        .btn-danger {
+            background: #f44336;
+            color: white;
+            border: none;
             padding: 12px;
             border-radius: 10px;
             font-size: 14px;
@@ -155,18 +181,19 @@
 
         /* Tarjeta de tarifa */
         .fare-estimate {
-            background: #f0f8ff;
+            background: #E8F5E9;
             padding: 15px;
             border-radius: 10px;
             margin: 10px 0;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            border-left: 4px solid #4CAF50;
         }
         .fare-price {
             font-size: 24px;
             font-weight: bold;
-            color: #4CAF50;
+            color: #2E7D32;
         }
 
         /* Tarjeta de viaje */
@@ -175,7 +202,10 @@
             border-radius: 15px;
             padding: 15px;
             margin-bottom: 10px;
+            border: 1px solid #e0e0e0;
         }
+        .ride-card h3 { color: #2E7D32; margin-bottom: 10px; }
+        .ride-card p { margin: 5px 0; color: #666; }
 
         /* Badges de estado */
         .status-badge {
@@ -183,20 +213,119 @@
             border-radius: 20px;
             font-size: 12px;
             font-weight: bold;
+            display: inline-block;
         }
-        .status-pending { background: #fff3cd; color: #856404; }
-        .status-accepted { background: #d4edda; color: #155724; }
+        .status-pending { background: #FFF3E0; color: #E65100; }
+        .status-accepted { background: #E8F5E9; color: #2E7D32; }
+        .status-in_progress { background: #E3F2FD; color: #0D47A1; }
+        .status-completed { background: #EEEEEE; color: #616161; }
 
-        :root {
-            --primary-color: #ffd700;
-            --secondary-color: #1a1a1a;
+        /* Driver info */
+        .driver-info {
+            background: #E8F5E9;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .driver-avatar {
+            width: 50px;
+            height: 50px;
+            background: #4CAF50;
+            border-radius: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+        }
+
+        /* Historial */
+        .history-item {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .history-item:hover { background: #f5f5f5; }
+
+        /* Loading */
+        .loading-screen {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #4CAF50, #2E7D32);
+            color: white;
+        }
+        .spinner {
+            border: 4px solid rgba(255,255,255,0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Login */
+        .login-container {
+            max-width: 400px;
+            margin: 50px auto;
+            padding: 30px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .login-container h1 { text-align: center; color: #2E7D32; margin-bottom: 20px; }
+        .login-container input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .login-container button {
+            width: 100%;
+            padding: 12px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            margin: 5px 0;
+            cursor: pointer;
+        }
+        .login-container button:hover { background: #2E7D32; }
+
+        /* Notificaciones */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #4CAF50;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 2000;
+            animation: slideIn 0.3s ease;
+        }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
         }
     </style>
 </head>
 <body>
     <div id="app">
-        <div style="display: flex; justify-content: center; align-items: center; height: 100%;">
+        <div class="loading-screen">
             <div class="spinner"></div>
+            <h2>Cargando Remis La Unión...</h2>
         </div>
     </div>
 
@@ -221,11 +350,13 @@
         let userMarker = null;
         let pickupMarker = null;
         let dropoffMarker = null;
+        let driverMarker = null;
         let pickup = null;
         let dropoff = null;
         let currentRide = null;
         let pendingRequests = [];
         let watchId = null;
+        let activeChannel = null;
 
         // Configuración del remís
         let appConfig = {
@@ -235,8 +366,6 @@
             extraBlockRate: 150,
             waitingRate: 150,
             commissionRate: 20,
-            primaryColor: '#ffd700',
-            secondaryColor: '#1a1a1a',
             logo: null
         };
 
@@ -247,7 +376,6 @@
 
         async function init() {
             await loadConfig();
-            applyTheme();
             
             const { data: { user } } = await supabaseClient.auth.getUser();
             
@@ -255,6 +383,7 @@
                 currentUser = user;
                 await loadUserProfile();
                 await loadPendingRequests();
+                subscribeToRides();
                 startLocationTracking();
                 renderMainApp();
             } else {
@@ -263,25 +392,35 @@
         }
 
         // ============================================
+        // NOTIFICACIONES
+        // ============================================
+        function showNotification(message, type = 'success') {
+            const notif = document.createElement('div');
+            notif.className = 'notification';
+            notif.style.background = type === 'success' ? '#4CAF50' : '#f44336';
+            notif.textContent = message;
+            document.body.appendChild(notif);
+            
+            setTimeout(() => {
+                notif.remove();
+            }, 3000);
+        }
+
+        // ============================================
         // RENDERIZADO
         // ============================================
         function renderLogin() {
             document.getElementById('app').innerHTML = `
-                <div style="display: flex; flex-direction: column; height: 100%; background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));">
-                    <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px;">
-                        ${appConfig.logo ? 
-                            `<img src="${appConfig.logo}" style="width: 120px; height: 120px; object-fit: contain; margin-bottom: 20px;">` : 
-                            `<div style="font-size: 80px; margin-bottom: 20px;">🚖</div>`
-                        }
-                        <h1 style="color: white; margin-bottom: 10px;">${appConfig.remisName}</h1>
-                        
-                        <div style="width: 100%; max-width: 400px; background: white; padding: 30px; border-radius: 20px; margin-top: 20px;">
-                            <h2 style="margin-bottom: 20px; text-align: center;">Bienvenido</h2>
-                            <input type="email" id="email" placeholder="Email" value="test@test.com" style="width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px;">
-                            <input type="password" id="password" placeholder="Contraseña" value="123456" style="width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px;">
-                            <button onclick="handleLogin()" style="width: 100%; padding: 12px; background: #4CAF50; color: white; border: none; border-radius: 5px; margin: 5px 0; cursor: pointer;">Iniciar Sesión</button>
-                            <button onclick="handleLogout()" style="width: 100%; padding: 12px; background: #f44336; color: white; border: none; border-radius: 5px; margin: 5px 0; cursor: pointer;">Cerrar Sesión</button>
-                        </div>
+                <div class="loading-screen">
+                    <div class="login-container">
+                        <h1>🚖 ${appConfig.remisName}</h1>
+                        <input type="email" id="email" placeholder="Email" value="test@test.com">
+                        <input type="password" id="password" placeholder="Contraseña" value="123456">
+                        <button onclick="handleLogin()">Iniciar Sesión</button>
+                        <button onclick="handleRegister()" style="background: #666;">Registrarse</button>
+                        <p style="text-align: center; margin-top: 20px; color: #666;">
+                            📞 ${appConfig.phoneMain}
+                        </p>
                     </div>
                 </div>
             `;
@@ -364,6 +503,7 @@
         function updateMarkers() {
             if (pickupMarker) map.removeLayer(pickupMarker);
             if (dropoffMarker) map.removeLayer(dropoffMarker);
+            if (driverMarker) map.removeLayer(driverMarker);
             
             if (pickup) {
                 pickupMarker = L.marker([pickup.lat, pickup.lng], {
@@ -393,10 +533,41 @@
             const panel = document.getElementById('panelContent');
             if (!panel) return;
             
-            let html = `<div class="panel-title">Solicitar Viaje</div>`;
+            let html = `<div class="panel-title">🚖 Solicitar Viaje</div>`;
             
             if (currentRide) {
-                html += `<div class="status-badge status-pending">Viaje solicitado</div>`;
+                const statusText = {
+                    'pending': 'Buscando conductor...',
+                    'accepted': 'Conductor asignado',
+                    'in_progress': 'Viaje en curso',
+                    'completed': 'Viaje completado'
+                };
+                
+                html += `
+                    <div class="status-badge status-${currentRide.ride_status}">
+                        ${statusText[currentRide.ride_status] || currentRide.ride_status}
+                    </div>
+                `;
+                
+                if (currentRide.driver) {
+                    html += `
+                        <div class="driver-info">
+                            <div class="driver-avatar">🚗</div>
+                            <div>
+                                <h3>${currentRide.driver.full_name || 'Conductor'}</h3>
+                                <p>⭐ 4.8 · 150 viajes</p>
+                                <p>🚗 Auto negro · ABC 123</p>
+                            </div>
+                        </div>
+                        <button class="btn-secondary" onclick="centerMapOnDriver()">📍 Ver conductor en mapa</button>
+                    `;
+                }
+                
+                if (currentRide.ride_status === 'accepted') {
+                    html += `<p style="margin-top: 10px;">El conductor está en camino</p>`;
+                }
+                
+                html += `<button class="btn-danger" onclick="cancelRide()">❌ Cancelar viaje</button>`;
             } else {
                 html += `
                     <button class="btn-secondary" onclick="setPickupHere()">📍 Usar mi ubicación</button>
@@ -410,7 +581,10 @@
                     
                     html += `
                         <div class="fare-estimate">
-                            <div>Tarifa estimada</div>
+                            <div>
+                                <strong>${blocks} cuadras</strong>
+                                <p style="font-size: 12px;">Tarifa estimada</p>
+                            </div>
                             <div class="fare-price">$${fare.total}</div>
                         </div>
                         <button class="btn-primary" onclick="requestRide()">🚖 Solicitar Viaje</button>
@@ -425,29 +599,63 @@
             const panel = document.getElementById('panelContent');
             if (!panel) return;
             
-            let html = `<div class="panel-title">Viajes disponibles</div>`;
-            
-            if (pendingRequests.length === 0) {
-                html += `<p style="text-align: center; color: #666; padding: 20px;">No hay viajes disponibles</p>`;
+            if (currentRide) {
+                const passenger = currentRide.passenger || {};
+                panel.innerHTML = `
+                    <div class="panel-title">🚗 Viaje Actual</div>
+                    <div class="status-badge status-${currentRide.ride_status}">
+                        Estado: ${currentRide.ride_status}
+                    </div>
+                    <div class="ride-card">
+                        <h3>👤 Pasajero: ${passenger.full_name || 'Sin nombre'}</h3>
+                        <p>📍 Origen: ${currentRide.pickup.lat.toFixed(4)}, ${currentRide.pickup.lng.toFixed(4)}</p>
+                        <p>🎯 Destino: ${currentRide.dropoff.lat.toFixed(4)}, ${currentRide.dropoff.lng.toFixed(4)}</p>
+                        <p>💰 Tarifa: $${currentRide.fare?.total}</p>
+                    </div>
+                    
+                    ${currentRide.ride_status === 'accepted' ? `
+                        <button class="btn-primary" onclick="startRide()">🟢 Iniciar viaje</button>
+                    ` : ''}
+                    
+                    ${currentRide.ride_status === 'in_progress' ? `
+                        <button class="btn-primary" onclick="completeRide()">✅ Completar viaje</button>
+                    ` : ''}
+                    
+                    <button class="btn-secondary" onclick="centerMapOnPickup()">📍 Ver punto de encuentro</button>
+                `;
             } else {
-                pendingRequests.forEach(ride => {
-                    html += `
-                        <div class="ride-card">
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <div>
-                                    <strong>💰 $${ride.fare?.total}</strong>
-                                    <p style="font-size: 12px; color: #666;">${new Date(ride.created_at).toLocaleTimeString()}</p>
+                let html = `<div class="panel-title">🚗 Viajes Disponibles</div>`;
+                
+                if (pendingRequests.length === 0) {
+                    html += `<p style="text-align: center; color: #666; padding: 20px;">No hay viajes disponibles</p>`;
+                } else {
+                    pendingRequests.forEach(ride => {
+                        const distance = getDistanceInMeters(
+                            ride.pickup.lat, ride.pickup.lng,
+                            userMarker?.getLatLng()?.lat || 0, 
+                            userMarker?.getLatLng()?.lng || 0
+                        );
+                        const blocks = metersToBlocks(distance);
+                        
+                        html += `
+                            <div class="ride-card">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <div>
+                                        <h3>💰 $${ride.fare?.total}</h3>
+                                        <p>📏 A ${blocks} cuadras</p>
+                                        <p>🕐 ${new Date(ride.created_at).toLocaleTimeString()}</p>
+                                    </div>
+                                    <button class="btn-primary" style="width: auto;" onclick="acceptRide('${ride.id}')">
+                                        Aceptar
+                                    </button>
                                 </div>
-                                <button class="btn-primary" style="width: auto; padding: 10px;" onclick="acceptRide('${ride.id}')">
-                                    Aceptar
-                                </button>
                             </div>
-                        </div>
-                    `;
-                });
+                        `;
+                    });
+                }
+                
+                panel.innerHTML = html;
             }
-            
-            panel.innerHTML = html;
         }
 
         // ============================================
@@ -467,18 +675,38 @@
                 currentUser = data.user;
                 await loadUserProfile();
                 await loadPendingRequests();
+                subscribeToRides();
                 startLocationTracking();
                 renderMainApp();
+                showNotification('¡Bienvenido ' + userProfile?.full_name + '!');
             }
         };
 
-        window.handleLogout = async function() {
+        window.handleRegister = async function() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            const { data, error } = await supabaseClient.auth.signUp({
+                email, password,
+                options: {
+                    data: { full_name: email.split('@')[0] }
+                }
+            });
+            
+            if (error) {
+                alert('Error: ' + error.message);
+            } else {
+                alert('Registro exitoso! Ahora inicia sesión.');
+            }
+        };
+
+        window.logout = async function() {
             await supabaseClient.auth.signOut();
+            if (watchId) navigator.geolocation.clearWatch(watchId);
+            if (activeChannel) activeChannel.unsubscribe();
             currentUser = null;
             renderLogin();
         };
-
-        window.logout = handleLogout;
 
         window.switchRole = async function(role) {
             if (role !== userRole) {
@@ -492,6 +720,7 @@
                 dropoff = null;
                 currentRide = null;
                 renderMainApp();
+                showNotification(`Ahora eres ${role === 'passenger' ? 'Pasajero' : 'Conductor'}`);
             }
         };
 
@@ -539,7 +768,7 @@
             } else {
                 currentRide = data;
                 renderPassengerPanel();
-                loadPendingRequests();
+                showNotification('Viaje solicitado! Buscando conductor...');
             }
         };
 
@@ -556,15 +785,196 @@
             if (error) {
                 alert('Error: ' + error.message);
             } else {
-                loadPendingRequests();
-                alert('Viaje aceptado!');
+                showNotification('¡Viaje aceptado!');
+                loadDriverLocation(currentUser.id);
             }
         };
 
-        window.openHistory = function() {
-            // Implementar historial
-            alert('Función en desarrollo');
+        window.startRide = async function() {
+            if (!currentRide) return;
+            
+            const { error } = await supabaseClient
+                .from('rides')
+                .update({ ride_status: 'in_progress' })
+                .eq('id', currentRide.id);
+            
+            if (!error) {
+                currentRide.ride_status = 'in_progress';
+                renderDriverPanel();
+                showNotification('Viaje iniciado');
+            }
         };
+
+        window.completeRide = async function() {
+            if (!currentRide) return;
+            
+            const { error } = await supabaseClient
+                .from('rides')
+                .update({
+                    ride_status: 'completed',
+                    ended_at: new Date()
+                })
+                .eq('id', currentRide.id);
+            
+            if (!error) {
+                currentRide = null;
+                if (pickupMarker) map.removeLayer(pickupMarker);
+                if (dropoffMarker) map.removeLayer(dropoffMarker);
+                if (driverMarker) map.removeLayer(driverMarker);
+                renderDriverPanel();
+                showNotification('✅ Viaje completado!');
+            }
+        };
+
+        window.cancelRide = async function() {
+            if (!currentRide) return;
+            
+            if (confirm('¿Cancelar el viaje?')) {
+                const { error } = await supabaseClient
+                    .from('rides')
+                    .update({ ride_status: 'cancelled' })
+                    .eq('id', currentRide.id);
+                
+                if (!error) {
+                    currentRide = null;
+                    renderPassengerPanel();
+                    showNotification('Viaje cancelado');
+                }
+            }
+        };
+
+        window.centerMapOnDriver = function() {
+            if (driverMarker) {
+                map.setView(driverMarker.getLatLng(), 16);
+            }
+        };
+
+        window.centerMapOnPickup = function() {
+            if (currentRide?.pickup) {
+                map.setView([currentRide.pickup.lat, currentRide.pickup.lng], 16);
+            }
+        };
+
+        // ============================================
+        // HISTORIAL
+        // ============================================
+        window.openHistory = async function() {
+            const { data } = await supabaseClient
+                .from('rides')
+                .select('*')
+                .or(`passenger_id.eq.${currentUser.id},driver_id.eq.${currentUser.id}`)
+                .order('created_at', { ascending: false })
+                .limit(20);
+            
+            const panel = document.getElementById('panelContent');
+            
+            if (!data || data.length === 0) {
+                panel.innerHTML = `
+                    <div class="panel-title">📋 Historial de Viajes</div>
+                    <p style="text-align: center; color: #666; padding: 20px;">No hay viajes aún</p>
+                    <button class="btn-secondary" onclick="togglePanel()">Cerrar</button>
+                `;
+            } else {
+                panel.innerHTML = `
+                    <div class="panel-title">📋 Historial de Viajes</div>
+                    ${data.map(ride => `
+                        <div class="history-item" onclick="showRideDetails('${ride.id}')">
+                            <div>
+                                <strong>${new Date(ride.created_at).toLocaleDateString()}</strong>
+                                <p style="font-size: 12px; color: #666;">${ride.ride_status}</p>
+                            </div>
+                            <div style="text-align: right;">
+                                <strong style="color: #4CAF50;">$${ride.fare?.total || 0}</strong>
+                                <p style="font-size: 12px;">${ride.passenger_id === currentUser.id ? '🚶 Como pasajero' : '🚗 Como conductor'}</p>
+                            </div>
+                        </div>
+                    `).join('')}
+                    <button class="btn-secondary" onclick="togglePanel()">Cerrar</button>
+                `;
+            }
+            
+            document.getElementById('slidePanel').classList.add('open');
+        };
+
+        // ============================================
+        // SUSCRIPCIONES EN TIEMPO REAL
+        // ============================================
+        function subscribeToRides() {
+            if (activeChannel) activeChannel.unsubscribe();
+            
+            activeChannel = supabaseClient
+                .channel('rides-channel')
+                .on(
+                    'postgres_changes',
+                    { event: '*', schema: 'public', table: 'rides' },
+                    async (payload) => {
+                        console.log('Cambio en viaje:', payload);
+                        
+                        // Si es un viaje nuevo y soy conductor, actualizar lista
+                        if (payload.eventType === 'INSERT' && userRole === 'driver') {
+                            await loadPendingRequests();
+                        }
+                        
+                        // Si el viaje es el actual, actualizar UI
+                        if (currentRide && payload.new.id === currentRide.id) {
+                            currentRide = payload.new;
+                            
+                            // Si hay driver asignado, cargar su información
+                            if (payload.new.driver_id && !currentRide.driver) {
+                                await loadDriverInfo(payload.new.driver_id);
+                            }
+                            
+                            // Actualizar panel según rol
+                            if (userRole === 'passenger') renderPassengerPanel();
+                            if (userRole === 'driver') renderDriverPanel();
+                            
+                            // Mostrar notificación según cambio
+                            if (payload.new.ride_status === 'accepted' && userRole === 'passenger') {
+                                showNotification('🚗 Conductor asignado!');
+                            }
+                            if (payload.new.ride_status === 'in_progress' && userRole === 'passenger') {
+                                showNotification('🟢 Viaje en curso');
+                            }
+                            if (payload.new.ride_status === 'completed') {
+                                showNotification('✅ Viaje completado');
+                            }
+                        }
+                    }
+                )
+                .subscribe();
+        }
+
+        async function loadDriverInfo(driverId) {
+            const { data } = await supabaseClient
+                .from('profiles')
+                .select('*')
+                .eq('id', driverId)
+                .single();
+            
+            if (data && currentRide) {
+                currentRide.driver = data;
+                if (userRole === 'passenger') renderPassengerPanel();
+            }
+        }
+
+        async function loadDriverLocation(driverId) {
+            // Suscribirse a ubicación del conductor
+            supabaseClient
+                .channel('driver-location')
+                .on(
+                    'postgres_changes',
+                    { event: 'UPDATE', schema: 'public', table: 'driver_locations', filter: `driver_id=eq.${driverId}` },
+                    (payload) => {
+                        if (payload.new && payload.new.location) {
+                            if (driverMarker) map.removeLayer(driverMarker);
+                            driverMarker = L.marker([payload.new.location.lat, payload.new.location.lng], {
+                                icon: L.divIcon({ html: '🚗', iconSize: [30, 30] })
+                            }).addTo(map).bindPopup('Conductor');
+                        }
+                    }
+                )
+                .subscribe();
+        }
 
         // ============================================
         // CÁLCULOS
@@ -636,11 +1046,12 @@
             const { data } = await supabaseClient
                 .from('rides')
                 .select('*')
-                .eq('ride_status', 'pending');
+                .eq('ride_status', 'pending')
+                .order('created_at', { ascending: false });
             
             if (data) {
                 pendingRequests = data;
-                if (userRole === 'driver') renderDriverPanel();
+                if (userRole === 'driver' && !currentRide) renderDriverPanel();
             }
         }
 
@@ -662,15 +1073,12 @@
                             updated_at: new Date()
                         });
                 }
-            }, null, { enableHighAccuracy: true });
+            }, null, { enableHighAccuracy: true, maximumAge: 0 });
         }
 
-        function applyTheme() {
-            document.documentElement.style.setProperty('--primary-color', appConfig.primaryColor);
-            document.documentElement.style.setProperty('--secondary-color', appConfig.secondaryColor);
-        }
-
-        // Actualizar viajes pendientes cada 5 segundos
+        // ============================================
+        // AUTO-REFRESH
+        // ============================================
         setInterval(loadPendingRequests, 5000);
     </script>
 </body>
