@@ -4,201 +4,431 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🚖 Remis La Unión - Dolores</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <!-- PRIMERO: Cargar Supabase de forma explícita -->
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    <!-- SEGUNDO: Cargar Leaflet -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-        body, html { height: 100%; width: 100%; }
-        #app { height: 100%; width: 100%; }
-        
-        /* Loading screen */
-        .loading-screen {
-            height: 100%;
+        body { 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
             display: flex;
-            flex-direction: column;
-            justify-content: center;
             align-items: center;
-            background: linear-gradient(135deg, #ffd700, #1a1a1a);
-            color: white;
+            justify-content: center;
         }
-        .spinner {
-            border: 4px solid rgba(255,255,255,0.3);
-            border-top: 4px solid white;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
+        
+        .login-card {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            width: 90%;
+            max-width: 400px;
+        }
+        
+        .login-card h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        
+        .login-card .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .input-group {
             margin-bottom: 20px;
         }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
-        .login-container {
-            max-width: 400px;
-            margin: 50px auto;
-            padding: 30px;
-            background: white;
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .input-group input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
             border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            font-size: 16px;
+            transition: border-color 0.3s;
         }
-        .login-container h1 { text-align: center; margin-bottom: 20px; }
-        .login-container input {
-            width: 100%;
-            padding: 12px;
-            margin: 10px 0;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-        }
-        .login-container button {
-            width: 100%;
-            padding: 12px;
-            background: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            margin: 5px 0;
-            cursor: pointer;
-        }
-        .login-container button:hover { background: #45a049; }
         
-        .error-box {
-            background: #ffebee;
-            color: #c62828;
-            padding: 20px;
-            border-radius: 5px;
-            margin: 20px;
+        .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, opacity 0.2s;
+            margin-bottom: 10px;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            opacity: 0.9;
+        }
+        
+        .btn-secondary {
+            background: #48bb78;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            opacity: 0.9;
+        }
+        
+        .btn-google {
+            background: #db4437;
+            color: white;
+        }
+        
+        .divider {
+            text-align: center;
+            margin: 20px 0;
+            position: relative;
+        }
+        
+        .divider::before,
+        .divider::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            width: 45%;
+            height: 1px;
+            background: #e0e0e0;
+        }
+        
+        .divider::before { left: 0; }
+        .divider::after { right: 0; }
+        
+        .divider span {
+            background: white;
+            padding: 0 10px;
+            color: #999;
+            font-size: 14px;
+        }
+        
+        .error-message {
+            background: #fee;
+            color: #c33;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 14px;
+            display: none;
+        }
+        
+        .success-message {
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 14px;
+            display: none;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+            vertical-align: middle;
+            display: none;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .test-credentials {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            font-size: 13px;
+            color: #666;
             text-align: center;
         }
+        
+        .test-credentials code {
+            background: #e9ecef;
+            padding: 3px 6px;
+            border-radius: 4px;
+            color: #d73a49;
+        }
     </style>
+    <!-- Cargar Supabase de forma explícita -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
 </head>
 <body>
-    <div id="app">
-        <div class="loading-screen">
-            <div class="spinner"></div>
-            <h2>Cargando aplicación...</h2>
+    <div class="login-card" id="app">
+        <h1>🚖 Remis La Unión</h1>
+        <div class="subtitle" id="statusText">Inicializando...</div>
+        
+        <div id="errorDisplay" class="error-message"></div>
+        <div id="successDisplay" class="success-message"></div>
+        
+        <div id="loginForm">
+            <div class="input-group">
+                <label>Email</label>
+                <input type="email" id="email" value="test@test.com" placeholder="ejemplo@correo.com">
+            </div>
+            
+            <div class="input-group">
+                <label>Contraseña</label>
+                <input type="password" id="password" value="123456" placeholder="••••••••">
+            </div>
+            
+            <button class="btn btn-primary" id="loginBtn" onclick="handleLogin()">
+                <span class="loading" id="loginLoading"></span>
+                Iniciar Sesión
+            </button>
+            
+            <button class="btn btn-secondary" id="registerBtn" onclick="handleRegister()">
+                <span class="loading" id="registerLoading"></span>
+                Crear Cuenta
+            </button>
+            
+            <div class="divider">
+                <span>o</span>
+            </div>
+            
+            <button class="btn btn-google" onclick="handleGoogleLogin()">
+                Continuar con Google
+            </button>
+        </div>
+        
+        <div class="test-credentials">
+            <strong>🔐 Credenciales de prueba:</strong><br>
+            Email: <code>test@test.com</code><br>
+            Password: <code>123456</code>
         </div>
     </div>
 
     <script>
         // ============================================
-        // ESPERAR A QUE CARGUEN LAS LIBRERÍAS
+        // CONFIGURACIÓN SUPABASE - VERIFICADA
         // ============================================
-        window.addEventListener('load', function() {
-            // Verificar que Supabase cargó
-            if (typeof supabase === 'undefined') {
-                document.getElementById('app').innerHTML = `
-                    <div class="error-box">
-                        <h2>❌ Error de carga</h2>
-                        <p>La librería de Supabase no cargó correctamente.</p>
-                        <p>Verifica tu conexión a internet o intenta más tarde.</p>
-                        <button onclick="location.reload()" style="padding:10px; margin-top:10px;">Reintentar</button>
-                    </div>
-                `;
+        const SUPABASE_URL = 'https://tmccuhzqyfgjaerqydmr.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtY2N1aHpxeWZnamFlcnF5ZG1yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1MjUxNTMsImV4cCI6MjA4NzEwMTE1M30.RZyzaN1a35DgNT4N70D5oxvFbliMoKcNgFc16C4zz9E';
+
+        // Variable global para el cliente
+        let supabaseClient = null;
+
+        // ============================================
+        // INICIALIZACIÓN
+        // ============================================
+        window.addEventListener('load', async function() {
+            document.getElementById('statusText').textContent = 'Conectando con servidor...';
+            
+            try {
+                // Verificar que Supabase cargó
+                if (typeof supabase === 'undefined') {
+                    throw new Error('La librería de Supabase no cargó. Verifica tu conexión.');
+                }
+                
+                // Crear cliente
+                supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+                    auth: {
+                        autoRefreshToken: true,
+                        persistSession: true,
+                        detectSessionInUrl: true
+                    }
+                });
+                
+                // Probar conexión
+                document.getElementById('statusText').textContent = 'Verificando sesión...';
+                
+                const { data: { user }, error } = await supabaseClient.auth.getUser();
+                
+                if (user) {
+                    document.getElementById('statusText').textContent = `✅ Sesión activa: ${user.email}`;
+                    showSuccess(`Bienvenido ${user.email}`);
+                    
+                    // Ocultar formulario de login
+                    document.getElementById('loginForm').style.display = 'none';
+                    
+                    // Mostrar opciones
+                    const testDiv = document.querySelector('.test-credentials');
+                    testDiv.innerHTML = `
+                        <strong>✅ Sesión iniciada como:</strong><br>
+                        ${user.email}<br>
+                        <button onclick="logout()" style="margin-top:10px; padding:10px; background:#f44336; color:white; border:none; border-radius:5px; cursor:pointer;">
+                            Cerrar Sesión
+                        </button>
+                    `;
+                } else {
+                    document.getElementById('statusText').textContent = '🔐 Listo para iniciar sesión';
+                }
+                
+            } catch (error) {
+                showError('Error de inicialización: ' + error.message);
+                document.getElementById('statusText').textContent = '❌ Error de conexión';
+                console.error('Error detallado:', error);
+            }
+        });
+
+        // ============================================
+        // FUNCIONES DE AUTENTICACIÓN
+        // ============================================
+        window.handleLogin = async function() {
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            
+            if (!email || !password) {
+                showError('Completa todos los campos');
                 return;
             }
-
-            // ============================================
-            // CONFIGURACIÓN SUPABASE
-            // ============================================
-            const SUPABASE_URL = 'https://tmccuhzqyfgjaerqydmr.supabase.co';
-            const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtY2N1aHpxeWZnamFlcnF5ZG1yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1MjUxNTMsImV4cCI6MjA4NzEwMTE1M30.RZyzaN1a35DgNT4N70D5oxvFbliMoKcNgFc16C4zz9E';
             
-            // Crear cliente de Supabase
-            const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-            // ============================================
-            // VERSIÓN SIMPLIFICADA - SOLO LOGIN
-            // ============================================
-            async function init() {
-                const app = document.getElementById('app');
-                
-                try {
-                    // Verificar si hay sesión activa
-                    const { data: { user }, error } = await supabaseClient.auth.getUser();
-                    
-                    if (error || !user) {
-                        // Mostrar pantalla de login
-                        renderLogin(app);
-                    } else {
-                        // Usuario logueado - mostrar mensaje
-                        app.innerHTML = `
-                            <div style="padding:20px; text-align:center;">
-                                <h2>✅ Bienvenido ${user.email}</h2>
-                                <p>Sesión iniciada correctamente</p>
-                                <button onclick="logout()" style="padding:10px; margin-top:20px;">Cerrar sesión</button>
-                            </div>
-                        `;
-                    }
-                } catch (error) {
-                    app.innerHTML = `
-                        <div class="error-box">
-                            <h2>❌ Error</h2>
-                            <p>${error.message}</p>
-                        </div>
-                    `;
-                }
-            }
-
-            function renderLogin(container) {
-                container.innerHTML = `
-                    <div class="login-container">
-                        <h1>🚖 Remis La Unión</h1>
-                        <p style="text-align:center; margin-bottom:20px;">Ingresa con tu cuenta</p>
-                        <input type="email" id="email" placeholder="Email" value="test@test.com">
-                        <input type="password" id="password" placeholder="Contraseña" value="123456">
-                        <button onclick="handleLogin()">Iniciar Sesión</button>
-                        <button onclick="handleRegister()" style="background:#666;">Registrarse</button>
-                    </div>
-                `;
-            }
-
-            // ============================================
-            // FUNCIONES DE AUTENTICACIÓN
-            // ============================================
-            window.handleLogin = async function() {
-                const email = document.getElementById('email').value;
-                const password = document.getElementById('password').value;
+            // Mostrar loading
+            document.getElementById('loginLoading').style.display = 'inline-block';
+            document.getElementById('loginBtn').disabled = true;
+            hideError();
+            
+            try {
+                console.log('Intentando login con:', email);
                 
                 const { data, error } = await supabaseClient.auth.signInWithPassword({
-                    email, password
+                    email: email,
+                    password: password
                 });
                 
-                if (error) {
-                    alert('Error: ' + error.message);
-                } else {
-                    alert('Login exitoso!');
-                    location.reload();
-                }
-            };
-
-            window.handleRegister = async function() {
-                const email = document.getElementById('email').value;
-                const password = document.getElementById('password').value;
+                if (error) throw error;
                 
+                showSuccess('¡Login exitoso! Recargando...');
+                setTimeout(() => location.reload(), 1500);
+                
+            } catch (error) {
+                console.error('Error de login:', error);
+                showError('Error: ' + error.message);
+            } finally {
+                document.getElementById('loginLoading').style.display = 'none';
+                document.getElementById('loginBtn').disabled = false;
+            }
+        };
+
+        window.handleRegister = async function() {
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            
+            if (!email || !password) {
+                showError('Completa todos los campos');
+                return;
+            }
+            
+            if (password.length < 6) {
+                showError('La contraseña debe tener al menos 6 caracteres');
+                return;
+            }
+            
+            document.getElementById('registerLoading').style.display = 'inline-block';
+            document.getElementById('registerBtn').disabled = true;
+            hideError();
+            
+            try {
                 const { data, error } = await supabaseClient.auth.signUp({
-                    email, password,
+                    email: email,
+                    password: password,
                     options: {
-                        data: { full_name: email.split('@')[0] }
+                        data: {
+                            full_name: email.split('@')[0]
+                        }
                     }
                 });
                 
-                if (error) {
-                    alert('Error: ' + error.message);
-                } else {
-                    alert('Registro exitoso! Revisa tu email para confirmar.');
-                }
-            };
+                if (error) throw error;
+                
+                showSuccess('✅ Registro exitoso! Revisa tu email para confirmar.');
+                
+            } catch (error) {
+                showError('Error: ' + error.message);
+            } finally {
+                document.getElementById('registerLoading').style.display = 'none';
+                document.getElementById('registerBtn').disabled = false;
+            }
+        };
 
-            window.logout = async function() {
+        window.handleGoogleLogin = async function() {
+            try {
+                const { data, error } = await supabaseClient.auth.signInWithOAuth({
+                    provider: 'google'
+                });
+                
+                if (error) throw error;
+                
+            } catch (error) {
+                showError('Error con Google: ' + error.message);
+            }
+        };
+
+        window.logout = async function() {
+            try {
                 await supabaseClient.auth.signOut();
                 location.reload();
-            };
+            } catch (error) {
+                showError('Error al cerrar sesión: ' + error.message);
+            }
+        };
 
-            // Iniciar la app
-            init();
-        });
+        // ============================================
+        // FUNCIONES AUXILIARES
+        // ============================================
+        function showError(message) {
+            const errorDiv = document.getElementById('errorDisplay');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            
+            // Auto-ocultar después de 5 segundos
+            setTimeout(() => {
+                errorDiv.style.display = 'none';
+            }, 5000);
+        }
+
+        function hideError() {
+            document.getElementById('errorDisplay').style.display = 'none';
+        }
+
+        function showSuccess(message) {
+            const successDiv = document.getElementById('successDisplay');
+            successDiv.textContent = message;
+            successDiv.style.display = 'block';
+            
+            setTimeout(() => {
+                successDiv.style.display = 'none';
+            }, 3000);
+        }
+
+        // ============================================
+        // VERIFICACIÓN DE CONFIGURACIÓN
+        // ============================================
+        console.log('✅ Script cargado');
+        console.log('URL:', SUPABASE_URL);
+        console.log('Key length:', SUPABASE_KEY.length);
     </script>
 </body>
 </html>
