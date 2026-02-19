@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚖 Remisería MVP</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        body { height: 100vh; background: #f0f2f5; }
+        #app { height: 100%; display: flex; flex-direction: column; }
+        
+        /* Login */
+        .login-container { max-width: 400px; margin: auto; padding: 20px; background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .login-container h1 { text-align: center; margin-bottom: 20px; color: #333; }
+        .login-container input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 5px; }
+        .login-container button { width: 100%; padding: 12px; background: #4CAF50; color: white; border: none; border-radius: 5px; margin: 5px 0; cursor: pointer; }
+        .login-container button:hover { background: #45a049; }
+        
+        /* Header */
+        .header { display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; background: white; border-bottom: 1px solid #ddd; }
+        .header-buttons { display: flex; gap: 10px; }
+        .btn-switch { padding: 8px 15px; background: #2196F3; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        .btn-logout { padding: 8px 15px; background: #f44336; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        
+        /* Map */
+        #map { height: calc(100% - 120px); width: 100%; }
+        
+        /* Controls */
+        .controls { position: fixed; bottom: 20px; left: 20px; right: 20px; display: flex; flex-direction: column; gap: 10px; }
+        .btn-primary { padding: 15px; background: #4CAF50; color: white; border: none; border-radius: 10px; font-size: 16px; cursor: pointer; }
+        .btn-primary:disabled { background: #ccc; cursor: not-allowed; }
+        .btn-secondary { padding: 15px; background: white; color: #333; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; cursor: pointer; }
+        .info-panel { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        
+        /* Requests */
+        .requests-panel { position: fixed; top: 80px; left: 10px; right: 10px; display: flex; gap: 10px; overflow-x: auto; padding: 5px; }
+        .request-card { background: white; padding: 15px; border-radius: 10px; min-width: 200px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+        .request-card button { width: 100%; padding: 8px; margin-top: 10px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div id="app"></div>
+
+    <script>
+        // ============================================
+        // CONFIGURACIÓN SUPABASE
+        // ============================================
+        const SUPABASE_URL = 'https://tu-proyecto.supabase.co';
+        const SUPABASE_KEY = 'tu-anon-key';
+        const supabase = supabaseJs.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // ============================================
+        // ESTADO GLOBAL
+        // ============================================
+        let currentUser = null;
+        let userProfile = null;
+        let currentRole = 'passenger';
+        let map = null;
+        let userMarker = null;
+        let pickupMarker = null;
+        let dropoffMarker = null;
+        let watchId = null;
+        let pickup = null;
+        let dropoff = null;
+        let activeDrivers = new Map();
+        let rideRequests = [];
+
+        // ============================================
+        // RENDERIZADO DE PANTALLAS
+        // ============================================
+        function render() {
+            const app = document.getElementById('app');
+            
+            if (!currentUser) {
+                renderLogin(app);
+            } else {
+                if (currentRole === 'passenger') {
+                    renderPassenger(app);
+                } else {
+                    renderDriver(app);
+                }
+            }
+        }
+
+        // ============================================
+        // LOGIN SCREEN
+        // ============================================
+        function renderLogin(container) {
+            container.innerHTML = `
+                <div class="login-container">
+                    <h1>🚖 Remisería MVP</h1>
+                    <input type="email" id="email" placeholder="Email" value="test@test.com">
+                    <input type="password" id="password" placeholder="Contraseña" value="123456">
+                    <button onclick="handleLogin()">Iniciar Sesión</button>
+                    <button onclick="handleRegister()">Registrarse</button>
+                </div>
+            `;
+        }
+
+        window.handleLogin = async () => {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+            if (error) return alert('Error: ' + error.message);
+            
+            currentUser = data.user;
+            await loadProfile();
+            startLocation();
+            render();
+        };
+
+        window.handleRegister = async () => {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            const { data, error } = await supabase.auth.signUp({ 
+                email, password,
+                options: { data: { full_name: email.split('@')[0] } }
+            });
+            
+            if (error) return alert('Error: ' + error.message);
+            
+            if (data.user) {
+                await supabase.from('profiles').insert({
+                    id: data.user.id,
+                    email: email,
+                    full_name: email.split('@')[0],
+                    current_role: 'passenger'
+                });
+                alert('Registro exitoso! Ahora inicia sesión');
+            }
+        };
+
+        // ============================================
+        // PASSENGER SCREEN
+        // ============================================
+        function renderPassenger(container) {
+            container.innerHTML = `
+                <div class="header">
+                    <span>👤 ${userProfile?.full_name || 'Pasajero'}</span>
+                    <div class="header-buttons">
+                        <button class="btn-switch" onclick="switchRole('driver')">🔁 Ser Conductor</button>
+                        <button class="btn-logout" onclick="logout()">🚪 Salir</button>
+                    </div>
+                </div>
+                <div id="map"></div>
+                <div class="controls">
+                    <button class="btn-secondary" onclick="setPickupHere()">📍 Mi ubicación</button>
+                    <button class="btn-secondary" onclick="setDropoffHere()">🎯 Destino aquí</button>
+                    ${pickup && dropoff ? `
+                        <button class="btn-primary" onclick="requestRide()" id="requestBtn">🚖 Solicitar Viaje</button>
+                    ` : ''}
+                </div>
+            `;
+
+            initMap();
+            if (pickup) addMarker(pickup, 'pickup', 'green');
+            if (dropoff) addMarker(dropoff, 'dropoff', 'red');
+        }
+
+        window.setPickupHere = () => {
+            if (!map) return;
+            const center = map.getCenter();
+            pickup = { lat: center.lat, lng: center.lng };
+            if (pickupMarker) map.removeLayer(pickupMarker);
+            pickupMarker = L.marker([pickup.lat, pickup.lng], { 
+                icon: L.divIcon({ className: 'custom-marker', html: '📍', iconSize: [30, 30] })
+            }).addTo(map).bindPopup('Origen');
+            render();
+        };
+
+        window.setDropoffHere = () => {
+            if (!map) return;
+            const center = map.getCenter();
+            dropoff = { lat: center.lat, lng: center.lng };
+            if (dropoffMarker) map.removeLayer(dropoffMarker);
+            dropoffMarker = L.marker([dropoff.lat, dropoff.lng], {
+                icon: L.divIcon({ className: 'custom-marker', html: '🎯', iconSize: [30, 30] })
+            }).addTo(map).bindPopup('Destino');
+            render();
+        };
+
+        window.requestRide = async () => {
+            if (!pickup || !dropoff) return alert('Selecciona origen y destino');
+            
+            const btn = document.getElementById('requestBtn');
+            btn.disabled = true;
+            btn.textContent = 'Buscando conductor...';
+            
+            // Calcular tarifa (simplificado)
+            const distance = getDistance(pickup.lat, pickup.lng, dropoff.lat, dropoff.lng);
+            const fare = calculateFare(distance);
+            
+            // Guardar en Supabase
+            const { data, error } = await supabase.from('rides').insert({
+                passenger_id: currentUser.id,
+                pickup: pickup,
+                dropoff: dropoff,
+                fare: fare,
+                status: 'pending'
+            }).select();
+            
+            if (error) {
+                alert('Error: ' + error.message);
+                btn.disabled = false;
+                btn.textContent = 'Solicitar Viaje';
+            } else {
+                alert('Viaje solicitado! ID: ' + data[0].id);
+            }
+        };
+
+        // ============================================
+        // DRIVER SCREEN
+        // ============================================
+        function renderDriver(container) {
+            container.innerHTML = `
+                <div class="header">
+                    <span>🚗 ${userProfile?.full_name || 'Conductor'}</span>
+                    <div class="header-buttons">
+                        <button class="btn-switch" onclick="switchRole('passenger')">🔁 Ser Pasajero</button>
+                        <button class="btn-logout" onclick="logout()">🚪 Salir</button>
+                    </div>
+                </div>
+                <div id="map"></div>
+                <div class="requests-panel" id="requestsPanel"></div>
+                <div class="controls">
+                    <div class="info-panel">
+                        <span>🟢 Conectado como conductor</span>
+                    </div>
+                </div>
+            `;
+
+            initMap();
+            loadPendingRequests();
+            setInterval(loadPendingRequests, 5000);
+        }
+
+        async function loadPendingRequests() {
+            const { data } = await supabase
+                .from('rides')
+                .select('*')
+                .eq('status', 'pending')
+                .order('created_at', { ascending: false });
+            
+            if (data) {
+                rideRequests = data;
+                updateRequestsPanel();
+            }
+        }
+
+        function updateRequestsPanel() {
+            const panel = document.getElementById('requestsPanel');
+            if (!panel) return;
+
+            if (rideRequests.length === 0) {
+                panel.innerHTML = '';
+                return;
+            }
+
+            panel.innerHTML = rideRequests.map(req => `
+                <div class="request-card">
+                    <strong>💰 $${req.fare?.total || 100}</strong>
+                    <p>📍 ${req.pickup.lat.toFixed(4)}, ${req.pickup.lng.toFixed(4)}</p>
+                    <button onclick="acceptRide('${req.id}')">Aceptar</button>
+                </div>
+            `).join('');
+        }
+
+        window.acceptRide = async (rideId) => {
+            const { error } = await supabase
+                .from('rides')
+                .update({ 
+                    driver_id: currentUser.id,
+                    status: 'accepted',
+                    started_at: new Date()
+                })
+                .eq('id', rideId);
+            
+            if (error) {
+                alert('Error: ' + error.message);
+            } else {
+                alert('Viaje aceptado!');
+                loadPendingRequests();
+            }
+        };
+
+        // ============================================
+        // FUNCIONES COMPARTIDAS
+        // ============================================
+        async function loadProfile() {
+            const { data } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', currentUser.id)
+                .single();
+            
+            userProfile = data;
+            currentRole = data?.current_role || 'passenger';
+        }
+
+        window.switchRole = async (role) => {
+            const { error } = await supabase
+                .from('profiles')
+                .update({ current_role: role })
+                .eq('id', currentUser.id);
+            
+            if (!error) {
+                currentRole = role;
+                render();
+            }
+        };
+
+        window.logout = async () => {
+            await supabase.auth.signOut();
+            currentUser = null;
+            userProfile = null;
+            if (watchId) navigator.geolocation.clearWatch(watchId);
+            render();
+        };
+
+        function initMap() {
+            setTimeout(() => {
+                if (map) map.remove();
+                
+                map = L.map('map').setView([-34.6037, -58.3816], 13);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap'
+                }).addTo(map);
+                
+                // Obtener ubicación actual
+                navigator.geolocation.getCurrentPosition(pos => {
+                    const { latitude, longitude } = pos.coords;
+                    map.setView([latitude, longitude], 15);
+                    
+                    if (userMarker) map.removeLayer(userMarker);
+                    userMarker = L.marker([latitude, longitude], {
+                        icon: L.divIcon({ className: 'custom-marker', html: '🔵', iconSize: [30, 30] })
+                    }).addTo(map).bindPopup('Tú');
+                });
+            }, 100);
+        }
+
+        function startLocation() {
+            if (watchId) navigator.geolocation.clearWatch(watchId);
+            
+            watchId = navigator.geolocation.watchPosition(pos => {
+                const { latitude, longitude } = pos.coords;
+                if (userMarker) {
+                    userMarker.setLatLng([latitude, longitude]);
+                }
+                
+                // Actualizar ubicación en Supabase (para conductores)
+                if (currentRole === 'driver') {
+                    // Guardar ubicación en tiempo real (opcional)
+                }
+            }, null, { enableHighAccuracy: true, maximumAge: 0 });
+        }
+
+        function addMarker(position, type, color) {
+            if (!map) return;
+            L.marker([position.lat, position.lng]).addTo(map)
+                .bindPopup(type);
+        }
+
+        // ============================================
+        // CÁLCULOS
+        // ============================================
+        function getDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                    Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) *
+                    Math.sin(dLon/2) * Math.sin(dLon/2);
+            return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
+        }
+
+        function calculateFare(distanceKm) {
+            const BASE = 50;
+            const KM_RATE = 10;
+            const COMMISSION = 0.2;
+            
+            const subtotal = BASE + (distanceKm * KM_RATE);
+            return {
+                base: BASE,
+                distance: distanceKm * KM_RATE,
+                commission: subtotal * COMMISSION,
+                total: Math.round(subtotal * (1 + COMMISSION))
+            };
+        }
+
+        // ============================================
+        // INICIAR APP
+        // ============================================
+        async function init() {
+            const { data } = await supabase.auth.getUser();
+            if (data.user) {
+                currentUser = data.user;
+                await loadProfile();
+                startLocation();
+            }
+            render();
+        }
+
+        init();
+
+        // ============================================
+        // SQL PARA SUPABASE (ejecutar en SQL Editor)
+        // ============================================
+        /*
+        CREATE TABLE profiles (
+            id UUID REFERENCES auth.users PRIMARY KEY,
+            email TEXT,
+            full_name TEXT,
+            current_role TEXT DEFAULT 'passenger',
+            created_at TIMESTAMP DEFAULT NOW()
+        );
+
+        CREATE TABLE rides (
+            id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+            passenger_id UUID REFERENCES profiles(id),
+            driver_id UUID REFERENCES profiles(id),
+            pickup JSONB NOT NULL,
+            dropoff JSONB NOT NULL,
+            fare JSONB NOT NULL,
+            status TEXT DEFAULT 'pending',
+            started_at TIMESTAMP,
+            ended_at TIMESTAMP,
+            created_at TIMESTAMP DEFAULT NOW()
+        );
+
+        ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+        ALTER TABLE rides ENABLE ROW LEVEL SECURITY;
+
+        CREATE POLICY "Users can view own profile" ON profiles
+            FOR SELECT USING (auth.uid() = id);
+
+        CREATE POLICY "Users can update own profile" ON profiles
+            FOR UPDATE USING (auth.uid() = id);
+
+        CREATE POLICY "Anyone can view pending rides" ON rides
+            FOR SELECT USING (status = 'pending');
+
+        CREATE POLICY "Users can view their rides" ON rides
+            FOR SELECT USING (auth.uid() = passenger_id OR auth.uid() = driver_id);
+
+        CREATE POLICY "Users can insert rides" ON rides
+            FOR INSERT WITH CHECK (auth.uid() = passenger_id);
+
+        CREATE POLICY "Drivers can update rides" ON rides
+            FOR UPDATE USING (auth.uid() = driver_id OR auth.uid() = passenger_id);
+        */
+    </script>
+</body>
+</html>
