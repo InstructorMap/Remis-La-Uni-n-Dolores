@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⚙️ Panel Admin - Remisería</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        body { background: #f0f2f5; padding: 20px; }
+        
+        .container { max-width: 800px; margin: 0 auto; }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .card h2 {
+            margin-bottom: 20px;
+            color: #333;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 10px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+        
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        .form-group input:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .form-group textarea {
+            height: 100px;
+            resize: vertical;
+        }
+        
+        .logo-preview {
+            width: 200px;
+            height: 200px;
+            border: 3px dashed #ccc;
+            border-radius: 10px;
+            margin: 15px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            background: #f9f9f9;
+        }
+        
+        .logo-preview img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        
+        .button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin-right: 10px;
+        }
+        
+        .button:hover {
+            background: #5a67d8;
+        }
+        
+        .button-success {
+            background: #48bb78;
+        }
+        
+        .button-success:hover {
+            background: #38a169;
+        }
+        
+        .button-danger {
+            background: #f56565;
+        }
+        
+        .button-danger:hover {
+            background: #e53e3e;
+        }
+        
+        .tarifa-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            align-items: center;
+        }
+        
+        .status-message {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            display: none;
+        }
+        
+        .status-success {
+            background: #c6f6d5;
+            color: #22543d;
+            display: block;
+        }
+        
+        .status-error {
+            background: #fed7d7;
+            color: #742a2a;
+            display: block;
+        }
+        
+        .redes-sociales {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        .horario-item {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .preview-card {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+        
+        .preview-title {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .preview-content {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            border: 2px solid #e0e0e0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚙️ Panel de Administración</h1>
+            <p>Configura los datos de tu remisería</p>
+        </div>
+
+        <!-- Login Section -->
+        <div class="card" id="loginSection">
+            <h2>🔐 Acceso Administrador</h2>
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="adminEmail" placeholder="admin@remiseria.com">
+            </div>
+            <div class="form-group">
+                <label>Contraseña</label>
+                <input type="password" id="adminPassword" placeholder="••••••••">
+            </div>
+            <button class="button" onclick="adminLogin()">Iniciar Sesión</button>
+        </div>
+
+        <!-- Admin Panel (hidden by default) -->
+        <div id="adminPanel" style="display: none;">
+            <!-- Status Messages -->
+            <div id="statusMessage" class="status-message"></div>
+
+            <!-- Logo Section -->
+            <div class="card">
+                <h2>🖼️ Logo</h2>
+                <div class="form-group">
+                    <label>Subir Logo (JPG, PNG)</label>
+                    <input type="file" id="logoInput" accept="image/*" onchange="previewLogo(event)">
+                    <div class="logo-preview" id="logoPreview">
+                        <span>Vista previa</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información Básica -->
+            <div class="card">
+                <h2>🏢 Información del Remís</h2>
+                <div class="form-group">
+                    <label>Nombre del Remís</label>
+                    <input type="text" id="remisName" placeholder="Ej: Remis La Unión - Dolores">
+                </div>
+                <div class="form-group">
+                    <label>Dirección (opcional)</label>
+                    <input type="text" id="remisAddress" placeholder="Ej: Av. Principal 123, Dolores">
+                </div>
+            </div>
+
+            <!-- Contacto -->
+            <div class="card">
+                <h2>📞 Contacto</h2>
+                <div class="form-group">
+                    <label>Teléfono Principal</label>
+                    <input type="tel" id="phoneMain" placeholder="Ej: 2244-567890">
+                </div>
+                <div class="form-group">
+                    <label>Teléfono Secundario (opcional)</label>
+                    <input type="tel" id="phoneSecondary" placeholder="Ej: 2244-123456">
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="hasWhatsapp" checked> ¿Es WhatsApp?
+                    </label>
+                </div>
+            </div>
+
+            <!-- Horarios -->
+            <div class="card">
+                <h2>⏰ Horarios</h2>
+                <div class="horario-item">
+                    <select id="scheduleType" style="flex: 1; padding: 10px;">
+                        <option value="24h">Atención las 24 horas</option>
+                        <option value="custom">Horario personalizado</option>
+                    </select>
+                </div>
+                <div id="customSchedule" style="display: none;">
+                    <div class="horario-item">
+                        <input type="text" placeholder="Lunes a Viernes" style="flex: 1;" id="weekdayHours" value="8:00 - 22:00">
+                    </div>
+                    <div class="horario-item">
+                        <input type="text" placeholder="Sábados" style="flex: 1;" id="saturdayHours" value="9:00 - 20:00">
+                    </div>
+                    <div class="horario-item">
+                        <input type="text" placeholder="Domingos" style="flex: 1;" id="sundayHours" value="10:00 - 18:00">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tarifas -->
+            <div class="card">
+                <h2>💰 Tarifas</h2>
+                <div class="tarifa-row">
+                    <div>
+                        <label>Viaje local (25 cuadras)</label>
+                        <input type="number" id="baseFare" value="3500" step="100">
+                    </div>
+                    <div>
+                        <label>Por cuadra extra</label>
+                        <input type="number" id="extraBlockRate" value="150" step="10">
+                    </div>
+                    <div>
+                        <label>Minuto de espera</label>
+                        <input type="number" id="waitingRate" value="150" step="10">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Comisión %</label>
+                    <input type="number" id="commissionRate" value="20" step="1" min="0" max="100">
+                </div>
+            </div>
+
+            <!-- Redes Sociales -->
+            <div class="card">
+                <h2>🌐 Redes Sociales</h2>
+                <div class="redes-sociales">
+                    <div class="form-group">
+                        <label>Instagram</label>
+                        <input type="url" id="instagram" placeholder="https://instagram.com/...">
+                    </div>
+                    <div class="form-group">
+                        <label>Facebook</label>
+                        <input type="url" id="facebook" placeholder="https://facebook.com/...">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Colores (opcional) -->
+            <div class="card">
+                <h2>🎨 Personalización</h2>
+                <div class="redes-sociales">
+                    <div class="form-group">
+                        <label>Color principal</label>
+                        <input type="color" id="primaryColor" value="#ffd700">
+                    </div>
+                    <div class="form-group">
+                        <label>Color secundario</label>
+                        <input type="color" id="secondaryColor" value="#1a1a1a">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Preview -->
+            <div class="card">
+                <h2>👁️ Vista Previa</h2>
+                <div class="preview-card">
+                    <div class="preview-title">Así se verá tu app:</div>
+                    <div class="preview-content" id="livePreview">
+                        <!-- Preview actualizada via JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botones de Acción -->
+            <div style="display: flex; gap: 15px; margin-bottom: 50px;">
+                <button class="button button-success" onclick="saveConfig()">💾 Guardar Configuración</button>
+                <button class="button" onclick="previewConfig()">👁️ Vista Previa</button>
+                <button class="button button-danger" onclick="resetConfig()">↺ Restablecer</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // CONFIGURACIÓN SUPABASE
+        // ============================================
+        const SUPABASE_URL = 'https://tu-proyecto.supabase.co';
+        const SUPABASE_KEY = 'tu-anon-key';
+        const supabase = supabaseJs.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let logoBase64 = null;
+
+        // ============================================
+        // LOGIN DE ADMIN
+        // ============================================
+        async function adminLogin() {
+            const email = document.getElementById('adminEmail').value;
+            const password = document.getElementById('adminPassword').value;
+            
+            try {
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email, password
+                });
+                
+                if (error) throw error;
+                
+                // Verificar si es admin (puedes tener una tabla de admins)
+                document.getElementById('loginSection').style.display = 'none';
+                document.getElementById('adminPanel').style.display = 'block';
+                loadConfig();
+                
+            } catch (error) {
+                showStatus('Error de login: ' + error.message, 'error');
+            }
+        }
+
+        // ============================================
+        // PREVIEW DEL LOGO
+        // ============================================
+        function previewLogo(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    logoBase64 = e.target.result;
+                    const preview = document.getElementById('logoPreview');
+                    preview.innerHTML = `<img src="${logoBase64}" alt="Logo preview">`;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // ============================================
+        // MOSTRAR/OCULTAR HORARIO PERSONALIZADO
+        // ============================================
+        document.getElementById('scheduleType').addEventListener('change', function(e) {
+            const customSchedule = document.getElementById('customSchedule');
+            customSchedule.style.display = e.target.value === 'custom' ? 'block' : 'none';
+        });
+
+        // ============================================
+        // VISTA PREVIA EN VIVO
+        // ============================================
+        function updateLivePreview() {
+            const preview = document.getElementById('livePreview');
+            const name = document.getElementById('remisName').value || 'Remis La Unión';
+            const phone = document.getElementById('phoneMain').value || '2244-567890';
+            
+            preview.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    ${logoBase64 ? 
+                        `<img src="${logoBase64}" style="width: 60px; height: 60px; object-fit: contain;">` : 
+                        '<div style="font-size: 40px;">🚖</div>'
+                    }
+                    <div>
+                        <strong style="font-size: 20px;">${name}</strong>
+                        <div style="display: flex; gap: 10px; margin-top: 5px;">
+                            <span>📞 ${phone}</span>
+                            ${document.getElementById('hasWhatsapp').checked ? '💬 WhatsApp' : ''}
+                        </div>
+                    </div>
+                </div>
+                <hr style="margin: 15px 0;">
+                <div>
+                    <strong>💰 Tarifa base:</strong> $${document.getElementById('baseFare').value} (25 cuadras)<br>
+                    <strong>➕ Cuadra extra:</strong> $${document.getElementById('extraBlockRate').value}<br>
+                    <strong>⏱️ Minuto espera:</strong> $${document.getElementById('waitingRate').value}
+                </div>
+            `;
+        }
+
+        // Agregar listeners para preview en vivo
+        ['remisName', 'phoneMain', 'baseFare', 'extraBlockRate', 'waitingRate'].forEach(id => {
+            document.getElementById(id)?.addEventListener('input', updateLivePreview);
+        });
+
+        // ============================================
+        // GUARDAR CONFIGURACIÓN
+        // ============================================
+        async function saveConfig() {
+            const config = {
+                logo: logoBase64,
+                remisName: document.getElementById('remisName').value,
+                remisAddress: document.getElementById('remisAddress').value,
+                phoneMain: document.getElementById('phoneMain').value,
+                phoneSecondary: document.getElementById('phoneSecondary').value,
+                hasWhatsapp: document.getElementById('hasWhatsapp').checked,
+                scheduleType: document.getElementById('scheduleType').value,
+                weekdayHours: document.getElementById('weekdayHours')?.value,
+                saturdayHours: document.getElementById('saturdayHours')?.value,
+                sundayHours: document.getElementById('sundayHours')?.value,
+                baseFare: parseInt(document.getElementById('baseFare').value),
+                extraBlockRate: parseInt(document.getElementById('extraBlockRate').value),
+                waitingRate: parseInt(document.getElementById('waitingRate').value),
+                commissionRate: parseInt(document.getElementById('commissionRate').value),
+                instagram: document.getElementById('instagram').value,
+                facebook: document.getElementById('facebook').value,
+                primaryColor: document.getElementById('primaryColor').value,
+                secondaryColor: document.getElementById('secondaryColor').value
+            };
+
+            try {
+                // Guardar en Supabase (asumiendo una tabla 'config')
+                const { error } = await supabase
+                    .from('config')
+                    .upsert({ id: 1, data: config });
+                
+                if (error) throw error;
+                
+                showStatus('✅ Configuración guardada exitosamente!', 'success');
+                
+            } catch (error) {
+                showStatus('Error al guardar: ' + error.message, 'error');
+            }
+        }
+
+        // ============================================
+        // CARGAR CONFIGURACIÓN
+        // ============================================
+        async function loadConfig() {
+            try {
+                const { data, error } = await supabase
+                    .from('config')
+                    .select('*')
+                    .eq('id', 1)
+                    .single();
+                
+                if (error && error.code !== 'PGRST116') throw error;
+                
+                if (data) {
+                    const config = data.data;
+                    
+                    // Cargar valores en el formulario
+                    document.getElementById('remisName').value = config.remisName || '';
+                    document.getElementById('remisAddress').value = config.remisAddress || '';
+                    document.getElementById('phoneMain').value = config.phoneMain || '';
+                    document.getElementById('phoneSecondary').value = config.phoneSecondary || '';
+                    document.getElementById('hasWhatsapp').checked = config.hasWhatsapp || false;
+                    document.getElementById('scheduleType').value = config.scheduleType || '24h';
+                    
+                    if (config.weekdayHours) {
+                        document.getElementById('weekdayHours').value = config.weekdayHours;
+                        document.getElementById('saturdayHours').value = config.saturdayHours;
+                        document.getElementById('sundayHours').value = config.sundayHours;
+                        document.getElementById('customSchedule').style.display = config.scheduleType === 'custom' ? 'block' : 'none';
+                    }
+                    
+                    document.getElementById('baseFare').value = config.baseFare || 3500;
+                    document.getElementById('extraBlockRate').value = config.extraBlockRate || 150;
+                    document.getElementById('waitingRate').value = config.waitingRate || 150;
+                    document.getElementById('commissionRate').value = config.commissionRate || 20;
+                    document.getElementById('instagram').value = config.instagram || '';
+                    document.getElementById('facebook').value = config.facebook || '';
+                    document.getElementById('primaryColor').value = config.primaryColor || '#ffd700';
+                    document.getElementById('secondaryColor').value = config.secondaryColor || '#1a1a1a';
+                    
+                    if (config.logo) {
+                        logoBase64 = config.logo;
+                        document.getElementById('logoPreview').innerHTML = `<img src="${logoBase64}" alt="Logo">`;
+                    }
+                    
+                    updateLivePreview();
+                }
+                
+            } catch (error) {
+                console.log('No hay configuración previa');
+            }
+        }
+
+        // ============================================
+        // FUNCIONES AUXILIARES
+        // ============================================
+        function showStatus(message, type) {
+            const status = document.getElementById('statusMessage');
+            status.textContent = message;
+            status.className = `status-message status-${type}`;
+            setTimeout(() => {
+                status.style.display = 'none';
+            }, 3000);
+        }
+
+        function previewConfig() {
+            updateLivePreview();
+            showStatus('Vista previa actualizada', 'success');
+        }
+
+        function resetConfig() {
+            if (confirm('¿Restablecer toda la configuración?')) {
+                logoBase64 = null;
+                document.getElementById('logoPreview').innerHTML = '<span>Vista previa</span>';
+                document.getElementById('remisName').value = 'Remis La Unión - Dolores';
+                document.getElementById('phoneMain').value = '';
+                document.getElementById('baseFare').value = 3500;
+                document.getElementById('extraBlockRate').value = 150;
+                document.getElementById('waitingRate').value = 150;
+                updateLivePreview();
+            }
+        }
+
+        // ============================================
+        // TABLA CONFIG PARA SUPABASE (ejecutar en SQL)
+        // ============================================
+        /*
+        CREATE TABLE IF NOT EXISTS public.config (
+            id INTEGER PRIMARY KEY DEFAULT 1,
+            data JSONB NOT NULL,
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+        );
+
+        ALTER TABLE public.config ENABLE ROW LEVEL SECURITY;
+
+        CREATE POLICY "Anyone can read config"
+            ON public.config
+            FOR SELECT
+            TO authenticated
+            USING (true);
+
+        CREATE POLICY "Only admins can update config"
+            ON public.config
+            FOR ALL
+            TO authenticated
+            USING (auth.uid() IN (
+                SELECT id FROM public.profiles WHERE user_role = 'admin'
+            ));
+        */
+    </script>
+</body>
+</html>
